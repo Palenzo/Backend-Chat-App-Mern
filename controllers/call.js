@@ -33,7 +33,7 @@ const initiateCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is part of the chat
-  if (!chat.members.includes(req.user._id.toString())) {
+  if (!chat.members.includes(req.user)) {
     return next(
       new ErrorHandler("You are not authorized to call in this chat", 403)
     );
@@ -41,7 +41,7 @@ const initiateCall = TryCatch(async (req, res, next) => {
 
   // Create call record
   const call = await Call.create({
-    caller: req.user._id,
+    caller: req.user,
     receiver: receiverId,
     chat: chatId,
     callType,
@@ -57,12 +57,13 @@ const initiateCall = TryCatch(async (req, res, next) => {
 
   // Emit incoming call event to receiver
   if (receiverSocket && receiverSocket.length > 0) {
+    const callerUser = await User.findById(req.user);
     req.app.get("io").to(receiverSocket).emit(INCOMING_CALL, {
       call,
       caller: {
-        _id: req.user._id,
-        name: req.user.name,
-        avatar: req.user.avatar,
+        _id: callerUser._id,
+        name: callerUser.name,
+        avatar: callerUser.avatar,
       },
     });
   }
@@ -91,7 +92,7 @@ const acceptCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is the receiver
-  if (call.receiver.toString() !== req.user._id.toString()) {
+  if (call.receiver.toString() !== req.user) {
     return next(new ErrorHandler("You are not authorized to accept this call", 403));
   }
 
@@ -124,7 +125,7 @@ const rejectCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is the receiver
-  if (call.receiver.toString() !== req.user._id.toString()) {
+  if (call.receiver.toString() !== req.user) {
     return next(new ErrorHandler("You are not authorized to reject this call", 403));
   }
 
@@ -157,7 +158,7 @@ const endCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is part of the call
-  const userId = req.user._id.toString();
+  const userId = req.user;
   if (
     call.caller.toString() !== userId &&
     call.receiver.toString() !== userId
@@ -201,7 +202,7 @@ const getCallHistory = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is part of the chat
-  if (!chat.members.includes(req.user._id.toString())) {
+  if (!chat.members.includes(req.user)) {
     return next(
       new ErrorHandler("You are not authorized to view this call history", 403)
     );
@@ -224,7 +225,7 @@ const getCallHistory = TryCatch(async (req, res, next) => {
 // @desc    Get all call history for the user
 // @access  Private
 const getMyCallHistory = TryCatch(async (req, res, next) => {
-  const userId = req.user._id;
+  const userId = req.user;
 
   const calls = await Call.find({
     $or: [{ caller: userId }, { receiver: userId }],

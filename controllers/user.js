@@ -134,11 +134,11 @@ const acceptFriendRequest = TryCatch(async (req, res, next) => {
 
   const request = await Request.findById(requestId)
     .populate("sender", "name")
-    .populate("receiver", "name");
+    .populate("sender", "name avatar");
 
   if (!request) return next(new ErrorHandler("Request not found", 404));
 
-  if (request.receiver._id.toString() !== req.user.toString())
+  if (request.receiver._id.toString() !== req.user)
     return next(
       new ErrorHandler("You are not authorized to accept this request", 401)
     );
