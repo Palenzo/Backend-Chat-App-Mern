@@ -10,4 +10,7 @@ const corsOptions = {
 
 const ChatToken = "chattokken";
 
-export { corsOptions, ChatToken  };
+const STREAM_API_KEY = process.env.STREAM_API_KEY || "mmhfdzb5evj2";
+const STREAM_API_SECRET = process.env.STREAM_API_SECRET;
+
+export { corsOptions, ChatToken, STREAM_API_KEY, STREAM_API_SECRET };
