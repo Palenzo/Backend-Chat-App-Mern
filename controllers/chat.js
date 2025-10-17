@@ -339,7 +339,8 @@ const deleteChat = TryCatch(async (req, res, next) => {
       new ErrorHandler("You are not allowed to delete the group", 403)
     );
 
-  if (!chat.groupChat && !chat.members.includes(req.user)) {
+  const isMember = chat.members.some(member => member.toString() === req.user);
+  if (!chat.groupChat && !isMember) {
     return next(
       new ErrorHandler("You are not allowed to delete the chat", 403)
     );
@@ -383,7 +384,8 @@ const getMessages = TryCatch(async (req, res, next) => {
 
   if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
-  if (!chat.members.includes(req.user))
+  const isMember = chat.members.some(member => member.toString() === req.user);
+  if (!isMember)
     return next(
       new ErrorHandler("You are not allowed to access this chat", 403)
     );

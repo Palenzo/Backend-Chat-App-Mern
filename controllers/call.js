@@ -33,7 +33,8 @@ const initiateCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is part of the chat
-  if (!chat.members.includes(req.user)) {
+  const isMember = chat.members.some(member => member.toString() === req.user);
+  if (!isMember) {
     return next(
       new ErrorHandler("You are not authorized to call in this chat", 403)
     );
@@ -202,7 +203,8 @@ const getCallHistory = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is part of the chat
-  if (!chat.members.includes(req.user)) {
+  const isMember = chat.members.some(member => member.toString() === req.user);
+  if (!isMember) {
     return next(
       new ErrorHandler("You are not authorized to view this call history", 403)
     );
