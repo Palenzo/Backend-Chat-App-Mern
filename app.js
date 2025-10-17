@@ -16,6 +16,15 @@ import {
   ONLINE_USERS,
   START_TYPING,
   STOP_TYPING,
+  CALL_INITIATED,
+  CALL_ACCEPTED,
+  CALL_REJECTED,
+  CALL_ENDED,
+  CALL_UNAVAILABLE,
+  INCOMING_CALL,
+  WEBRTC_OFFER,
+  WEBRTC_ANSWER,
+  WEBRTC_ICE_CANDIDATE,
 } from "./constants/events.js";
 import { getSockets } from "./lib/helper.js";
 import { Message } from "./models/message.js";
@@ -25,6 +34,7 @@ import { socketAuthenticator } from "./middlewares/auth.js";
 import userRoute from "./routes/user.js";
 import chatRoute from "./routes/chat.js";
 import adminRoute from "./routes/admin.js";
+import callRoute from "./routes/call.js";
 
 dotenv.config({
   path: "./.env",
@@ -61,6 +71,7 @@ app.use(cors(corsOptions));
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/chat", chatRoute);
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/call", callRoute);
 
 io.use((socket, next) => {
   cookieParser()(
@@ -128,6 +139,78 @@ io.on("connection", (socket) => {
 
     const membersSocket = getSockets(members);
     io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
+  });
+
+  // Call Events
+  socket.on(CALL_INITIATED, ({ callId, receiverId, callType }) => {
+    const receiverSocket = getSockets([receiverId]);
+    if (receiverSocket && receiverSocket.length > 0) {
+      io.to(receiverSocket).emit(INCOMING_CALL, {
+        callId,
+        caller: {
+          _id: user._id,
+          name: user.name,
+          avatar: user.avatar,
+        },
+        callType,
+      });
+    } else {
+      // Receiver is offline
+      socket.emit(CALL_UNAVAILABLE, {
+        message: "User is not available",
+      });
+    }
+  });
+
+  socket.on(CALL_ACCEPTED, ({ callId, callerId }) => {
+    const callerSocket = getSockets([callerId]);
+    io.to(callerSocket).emit(CALL_ACCEPTED, {
+      callId,
+      receiverId: user._id,
+    });
+  });
+
+  socket.on(CALL_REJECTED, ({ callId, callerId }) => {
+    const callerSocket = getSockets([callerId]);
+    io.to(callerSocket).emit(CALL_REJECTED, {
+      callId,
+      receiverId: user._id,
+    });
+  });
+
+  socket.on(CALL_ENDED, ({ callId, userId }) => {
+    const userSocket = getSockets([userId]);
+    io.to(userSocket).emit(CALL_ENDED, {
+      callId,
+    });
+  });
+
+  // WebRTC Signaling Events
+  socket.on(WEBRTC_OFFER, ({ offer, receiverId, callId }) => {
+    const receiverSocket = getSockets([receiverId]);
+    io.to(receiverSocket).emit(WEBRTC_OFFER, {
+      offer,
+      callerId: user._id,
+      callId,
+    });
+  });
+
+  socket.on(WEBRTC_ANSWER, ({ answer, callerId, callId }) => {
+    const callerSocket = getSockets([callerId]);
+    io.to(callerSocket).emit(WEBRTC_ANSWER, {
+      answer,
+      receiverId: user._id,
+      callId,
+    });
+  });
+
+  socket.on(WEBRTC_ICE_CANDIDATE, ({ candidate, userId, callId }) => {
+    const userSocket = getSockets([userId]);
+    io.to(userSocket).emit(WEBRTC_ICE_CANDIDATE, {
+      candidate,
+      userId: user._id,
+      callId,
+    });
   });
 
   socket.on("disconnect", () => {
