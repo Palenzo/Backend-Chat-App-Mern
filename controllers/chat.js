@@ -98,7 +98,7 @@ const addMembers = TryCatch(async (req, res, next) => {
   if (!chat.groupChat)
     return next(new ErrorHandler("This is not a group chat", 400));
 
-  if (chat.creator.toString() !== req.user)
+  if (!chat.creator || chat.creator.toString() !== req.user)
     return next(new ErrorHandler("You are not allowed to add members", 403));
 
   const allNewMembersPromise = members.map((i) => User.findById(i, "name"));
@@ -146,7 +146,7 @@ const removeMember = TryCatch(async (req, res, next) => {
   if (!chat.groupChat)
     return next(new ErrorHandler("This is not a group chat", 400));
 
-  if (chat.creator.toString() !== req.user)
+  if (!chat.creator || chat.creator.toString() !== req.user)
     return next(new ErrorHandler("You are not allowed to add members", 403));
 
   if (chat.members.length <= 3)
@@ -190,7 +190,7 @@ const leaveGroup = TryCatch(async (req, res, next) => {
   if (remainingMembers.length < 3)
     return next(new ErrorHandler("Group must have at least 3 members", 400));
 
-  if (chat.creator.toString() === req.user) {
+  if (chat.creator && chat.creator.toString() === req.user) {
     const randomElement = Math.floor(Math.random() * remainingMembers.length);
     const newCreator = remainingMembers[randomElement];
     chat.creator = newCreator;
@@ -308,7 +308,7 @@ const renameGroup = TryCatch(async (req, res, next) => {
   if (!chat.groupChat)
     return next(new ErrorHandler("This is not a group chat", 400));
 
-  if (chat.creator.toString() !== req.user)
+  if (!chat.creator || chat.creator.toString() !== req.user)
     return next(
       new ErrorHandler("You are not allowed to rename the group", 403)
     );
@@ -334,7 +334,7 @@ const deleteChat = TryCatch(async (req, res, next) => {
 
   const members = chat.members;
 
-  if (chat.groupChat && chat.creator.toString() !== req.user)
+  if (chat.groupChat && chat.creator && chat.creator.toString() !== req.user)
     return next(
       new ErrorHandler("You are not allowed to delete the group", 403)
     );

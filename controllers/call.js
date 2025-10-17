@@ -59,14 +59,17 @@ const initiateCall = TryCatch(async (req, res, next) => {
   // Emit incoming call event to receiver
   if (receiverSocket && receiverSocket.length > 0) {
     const callerUser = await User.findById(req.user);
-    req.app.get("io").to(receiverSocket).emit(INCOMING_CALL, {
-      call,
-      caller: {
-        _id: callerUser._id,
-        name: callerUser.name,
-        avatar: callerUser.avatar,
-      },
-    });
+    
+    if (callerUser) {
+      req.app.get("io").to(receiverSocket).emit(INCOMING_CALL, {
+        call,
+        caller: {
+          _id: callerUser._id,
+          name: callerUser.name,
+          avatar: callerUser.avatar,
+        },
+      });
+    }
   }
 
   res.status(200).json({
@@ -93,7 +96,7 @@ const acceptCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is the receiver
-  if (call.receiver.toString() !== req.user) {
+  if (!call.receiver || call.receiver.toString() !== req.user) {
     return next(new ErrorHandler("You are not authorized to accept this call", 403));
   }
 
@@ -126,7 +129,7 @@ const rejectCall = TryCatch(async (req, res, next) => {
   }
 
   // Check if user is the receiver
-  if (call.receiver.toString() !== req.user) {
+  if (!call.receiver || call.receiver.toString() !== req.user) {
     return next(new ErrorHandler("You are not authorized to reject this call", 403));
   }
 
@@ -161,8 +164,8 @@ const endCall = TryCatch(async (req, res, next) => {
   // Check if user is part of the call
   const userId = req.user;
   if (
-    call.caller.toString() !== userId &&
-    call.receiver.toString() !== userId
+    !call.caller || !call.receiver ||
+    (call.caller.toString() !== userId && call.receiver.toString() !== userId)
   ) {
     return next(new ErrorHandler("You are not authorized to end this call", 403));
   }
