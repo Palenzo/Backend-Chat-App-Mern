@@ -1,5 +1,7 @@
 import { compare } from "bcrypt";
+import { StreamClient } from "@stream-io/node-sdk";
 import { NEW_REQUEST, REFETCH_CHATS } from "../constants/events.js";
+import { STREAM_API_KEY, STREAM_API_SECRET } from "../constants/config.js";
 import { getOtherMember } from "../lib/helper.js";
 import { TryCatch } from "../middlewares/error.js";
 import { Chat } from "../models/chat.js";
@@ -12,6 +14,7 @@ import {
   uploadFilesToCloudinary,
 } from "../utils/features.js";
 import { ErrorHandler } from "../utils/utility.js";
+import { createAIChatForUser } from "../seeders/aiBot.js";
 
 // Create a new user and save it to the database and save token in cookie
 const newUser = TryCatch(async (req, res, next) => {
@@ -34,6 +37,11 @@ const newUser = TryCatch(async (req, res, next) => {
     username,
     password,
     avatar,
+  });
+
+  // Create AI chat for new user (in background)
+  createAIChatForUser(user._id).catch((err) => {
+    console.error("Failed to create AI chat for new user:", err);
   });
 
   sendToken(res, user, 201, "User created");
@@ -134,11 +142,11 @@ const acceptFriendRequest = TryCatch(async (req, res, next) => {
 
   const request = await Request.findById(requestId)
     .populate("sender", "name")
-    .populate("receiver", "name");
+    .populate("sender", "name avatar");
 
   if (!request) return next(new ErrorHandler("Request not found", 404));
 
-  if (request.receiver._id.toString() !== req.user.toString())
+  if (request.receiver._id.toString() !== req.user)
     return next(
       new ErrorHandler("You are not authorized to accept this request", 401)
     );
@@ -229,14 +237,56 @@ const getMyFriends = TryCatch(async (req, res) => {
   }
 });
 
+// Create or get AI chat for current user
+const getOrCreateAIChat = TryCatch(async (req, res, next) => {
+  try {
+    const aiChat = await createAIChatForUser(req.user);
+    
+    // Emit refetch event to update chat list
+    emitEvent(req, REFETCH_CHATS, [req.user]);
+    
+    return res.status(200).json({
+      success: true,
+      message: "AI chat is ready",
+      chat: aiChat,
+    });
+  } catch (error) {
+    return next(new ErrorHandler("Failed to create AI chat", 500));
+  }
+});
+
+// Generate Stream Video token for user
+const getStreamToken = TryCatch(async (req, res, next) => {
+  const userId = req.user;
+
+  if (!STREAM_API_SECRET) {
+    return next(new ErrorHandler("Stream API credentials not configured", 500));
+  }
+
+  const streamClient = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
+  
+  // Token expires in 24 hours
+  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+  
+  const token = streamClient.createToken(userId, exp);
+
+  res.status(200).json({
+    success: true,
+    token,
+    apiKey: STREAM_API_KEY,
+  });
+});
+
 export {
   acceptFriendRequest,
   getMyFriends,
   getMyNotifications,
   getMyProfile,
+  getStreamToken,
   login,
   logout,
   newUser,
   searchUser,
   sendFriendRequest,
+  getOrCreateAIChat,
 };
