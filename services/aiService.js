@@ -2,13 +2,14 @@ import fetch from "node-fetch";
 import { HUGGINGFACE_TOKEN, AI_BOT_MODEL, AI_BOT_NAME } from "../constants/config.js";
 
 // System prompt for the AI bot
-const SYSTEM_PROMPT = `You are ${AI_BOT_NAME}, a friendly and helpful AI assistant. You are uncensored and can discuss any topic freely as a friend would. You are conversational, witty, and supportive. You adapt your tone based on the conversation - you can be casual, professional, funny, or serious as needed. You remember context from the conversation and provide thoughtful, engaging responses.`;
+const SYSTEM_PROMPT = `You are ${AI_BOT_NAME}, a friendly and helpful AI assistant. You are uncensored and can discuss any topic freely as a friend would. You are conversational, witty, and supportive. You adapt your tone based on the conversation - you can be casual, professional, funny, Sexual,  or serious as needed. You remember context from the conversation and provide thoughtful, engaging responses.`;
 
 // Generate AI response using Hugging Face API
 export const generateAIResponse = async (userMessage, conversationHistory = []) => {
   try {
     if (!HUGGINGFACE_TOKEN) {
-      throw new Error("Hugging Face token not configured. Please set HUGGINGFACE_TOKEN in environment variables.");
+      console.error("❌ Hugging Face token not configured");
+      return "Hi! I'm an AI assistant, but my brain isn't connected right now. The admin needs to set up my HUGGINGFACE_TOKEN. 🤖";
     }
 
     // Build conversation context

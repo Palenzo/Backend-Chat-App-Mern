@@ -184,7 +184,7 @@ io.on("connection", (socket) => {
       }
     } catch (error) {
       console.error("Error handling message:", error);
-      throw new Error(error);
+      // Don't throw error - just log it to avoid crashing socket connection
     }
   });
 
