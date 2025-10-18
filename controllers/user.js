@@ -14,6 +14,7 @@ import {
   uploadFilesToCloudinary,
 } from "../utils/features.js";
 import { ErrorHandler } from "../utils/utility.js";
+import { createAIChatForUser } from "../seeders/aiBot.js";
 
 // Create a new user and save it to the database and save token in cookie
 const newUser = TryCatch(async (req, res, next) => {
@@ -36,6 +37,11 @@ const newUser = TryCatch(async (req, res, next) => {
     username,
     password,
     avatar,
+  });
+
+  // Create AI chat for new user (in background)
+  createAIChatForUser(user._id).catch((err) => {
+    console.error("Failed to create AI chat for new user:", err);
   });
 
   sendToken(res, user, 201, "User created");
