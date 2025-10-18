@@ -10,6 +10,7 @@ import {
   newUser,
   searchUser,
   sendFriendRequest,
+  getOrCreateAIChat,
 } from "../controllers/user.js";
 import {
   acceptRequestValidator,
@@ -55,5 +56,7 @@ app.get("/notifications", getMyNotifications);
 app.get("/friends", getMyFriends);
 
 app.get("/stream-token", getStreamToken);
+
+app.post("/ai-chat", getOrCreateAIChat);
 
 export default app;
