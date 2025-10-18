@@ -37,7 +37,7 @@ import adminRoute from "./routes/admin.js";
 import callRoute from "./routes/call.js";
 
 import { createAIBot, getAIBot } from "./seeders/aiBot.js";
-import { generateAIResponse } from "./services/aiService.js";
+import { generateAIResponse } from "./services/aiService-upstage.js";
 import { Chat } from "./models/chat.js";
 
 dotenv.config({
