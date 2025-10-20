@@ -7,5 +7,7 @@
 			"path": "../../Frontend"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"powershell.cwd": "Frontend"
+	}
 }
