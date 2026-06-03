@@ -1,7 +1,5 @@
 import { compare } from "bcrypt";
-import { StreamClient } from "@stream-io/node-sdk";
 import { NEW_REQUEST, REFETCH_CHATS } from "../constants/events.js";
-import { STREAM_API_KEY, STREAM_API_SECRET } from "../constants/config.js";
 import { getOtherMember } from "../lib/helper.js";
 import { TryCatch } from "../middlewares/error.js";
 import { Chat } from "../models/chat.js";
@@ -255,34 +253,11 @@ const getOrCreateAIChat = TryCatch(async (req, res, next) => {
   }
 });
 
-// Generate Stream Video token for user
-const getStreamToken = TryCatch(async (req, res, next) => {
-  const userId = req.user;
-
-  if (!STREAM_API_SECRET) {
-    return next(new ErrorHandler("Stream API credentials not configured", 500));
-  }
-
-  const streamClient = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
-  
-  // Token expires in 24 hours
-  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
-  
-  const token = streamClient.createToken(userId, exp);
-
-  res.status(200).json({
-    success: true,
-    token,
-    apiKey: STREAM_API_KEY,
-  });
-});
-
 export {
   acceptFriendRequest,
   getMyFriends,
   getMyNotifications,
   getMyProfile,
-  getStreamToken,
   login,
   logout,
   newUser,

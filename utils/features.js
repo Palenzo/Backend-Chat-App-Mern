@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { v4 as uuid } from "uuid";
 import { v2 as cloudinary } from "cloudinary";
+import env from "../config/env.js";
 import { getBase64, getSockets } from "../lib/helper.js";
 
 const cookieOptions = {
@@ -11,17 +12,17 @@ const cookieOptions = {
   secure: true,
 };
 
-const connectDB = (uri) => {
+const connectDB = (uri) =>
   mongoose
     .connect(uri, { dbName: "ChatApplication" })
-    .then((data) => console.log(`Connected to DB: ${data.connection.host}`))
+    .then((data) => console.log(`✅ Connected to DB: ${data.connection.host}`))
     .catch((err) => {
+      console.error("❌ Database connection failed:", err.message);
       throw err;
     });
-};
 
 const sendToken = (res, user, code, message) => {
-  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+  const token = jwt.sign({ _id: user._id }, env.jwtSecret);
 
   return res.status(code).cookie("chattokken", token, cookieOptions).json({
     success: true,
@@ -56,18 +57,29 @@ const uploadFilesToCloudinary = async (files = []) => {
   try {
     const results = await Promise.all(uploadPromises);
 
-    const formattedResults = results.map((result) => ({
+    return results.map((result) => ({
       public_id: result.public_id,
       url: result.secure_url,
     }));
-    return formattedResults;
   } catch (err) {
-    throw new Error("Error uploading files to cloudinary", err);
+    throw new Error(`Error uploading files to Cloudinary: ${err.message}`);
   }
 };
 
-const deletFilesFromCloudinary = async (public_ids) => {
-  // Delete files from cloudinary
+const deleteFilesFromCloudinary = async (publicIds = []) => {
+  if (!publicIds.length) return;
+
+  const deletePromises = publicIds.map((publicId) =>
+    cloudinary.uploader
+      .destroy(publicId, { resource_type: "auto" })
+      .catch((err) => {
+        // Don't fail the whole request if one asset can't be removed —
+        // just log it so the orphan can be cleaned up later.
+        console.error(`Failed to delete Cloudinary asset ${publicId}:`, err.message);
+      })
+  );
+
+  await Promise.all(deletePromises);
 };
 
 export {
@@ -75,6 +87,6 @@ export {
   sendToken,
   cookieOptions,
   emitEvent,
-  deletFilesFromCloudinary,
+  deleteFilesFromCloudinary,
   uploadFilesToCloudinary,
 };

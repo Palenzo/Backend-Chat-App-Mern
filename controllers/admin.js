@@ -5,16 +5,17 @@ import { Message } from "../models/message.js";
 import { User } from "../models/user.js";
 import { ErrorHandler } from "../utils/utility.js";
 import { cookieOptions } from "../utils/features.js";
-import { adminSecretKey } from "../app.js";
+import env from "../config/env.js";
 
 const adminLogin = TryCatch(async (req, res, next) => {
   const { secretKey } = req.body;
 
-  const isMatched = secretKey === adminSecretKey;
+  const isMatched = secretKey === env.adminSecretKey;
 
   if (!isMatched) return next(new ErrorHandler("Invalid Admin Key", 401));
 
-  const token = jwt.sign(secretKey, process.env.JWT_SECRET);
+  // Sign a role claim — never embed the secret itself in the token.
+  const token = jwt.sign({ role: "admin" }, env.jwtSecret, { expiresIn: "15m" });
 
   return res
     .status(200)

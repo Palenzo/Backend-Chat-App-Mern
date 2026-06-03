@@ -1,4 +1,4 @@
-import { envMode } from "../app.js";
+import env from "../config/env.js";
 
 const errorMiddleware = (err, req, res, next) => {
   err.message ||= "Internal Server Error";
@@ -21,7 +21,7 @@ const errorMiddleware = (err, req, res, next) => {
     message: err.message,
   };
 
-  if (envMode === "DEVELOPMENT") {
+  if (env.isDevelopment) {
     response.error = err;
   }
 
