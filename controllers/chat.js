@@ -15,6 +15,7 @@ import {
 import { getOtherMember } from "../lib/helper.js";
 import { User } from "../models/user.js";
 import { Message } from "../models/message.js";
+import { AI_BOT_NAME } from "../constants/config.js";
 
 const newGroupChat = TryCatch(async (req, res, next) => {
   const { name, members } = req.body;
@@ -40,10 +41,19 @@ const newGroupChat = TryCatch(async (req, res, next) => {
 const getMyChats = TryCatch(async (req, res, next) => {
   const chats = await Chat.find({ members: req.user }).populate(
     "members",
-    "name avatar"
+    "name avatar username"
   );
 
-  const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
+  const botUsername = AI_BOT_NAME.toLowerCase();
+
+  // The AI assistant is surfaced via the floating popup, not the chat list.
+  const transformedChats = chats
+    .filter(
+      (chat) =>
+        chat.groupChat ||
+        !chat.members.some((m) => m.username === botUsername)
+    )
+    .map(({ _id, name, members, groupChat }) => {
     const otherMember = getOtherMember(members, req.user);
 
     return {
