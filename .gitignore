@@ -1,2 +1,16 @@
 node_modules
 .env
+.env.local
+
+# Test / build output
+coverage
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea

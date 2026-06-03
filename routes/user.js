@@ -4,7 +4,6 @@ import {
   getMyFriends,
   getMyNotifications,
   getMyProfile,
-  getStreamToken,
   login,
   logout,
   newUser,
@@ -54,8 +53,6 @@ app.put(
 app.get("/notifications", getMyNotifications);
 
 app.get("/friends", getMyFriends);
-
-app.get("/stream-token", getStreamToken);
 
 app.post("/ai-chat", getOrCreateAIChat);
 
